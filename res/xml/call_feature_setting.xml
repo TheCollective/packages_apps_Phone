@@ -34,6 +34,13 @@
             android:title="@string/vibrate_on_ring_title"
             android:persistent="false"
             android:defaultValue="false" />
+
+        <Preference
+            android:key="button_vibration_key"
+            android:title="@string/vibration_title"
+            android:dependency="button_vibrate_on_ring"
+            android:persistent="false"
+            android:defaultValue="false" />
     </PreferenceCategory>
 
   <PreferenceCategory
@@ -45,6 +52,14 @@
       android:key="button_voicemail_category_key"
       android:title="@string/voicemail"
       android:persistent="false">
+
+      <CheckBoxPreference
+          android:defaultValue="false"
+          android:key="button_mwi_notification_key"
+          android:title="@string/mwi_notification_title"
+          android:persistent="false"
+          android:summary="@string/mwi_notification_summary" />
+
       <ListPreference
           android:key="button_voicemail_provider_key"
           android:title="@string/voicemail_provider"
@@ -145,6 +160,12 @@
         android:title="@string/hac_mode_title"
         android:persistent="true"
         android:summary="@string/hac_mode_summary"/>
+
+     <CheckBoxPreference
+        android:key="button_exit_to_home_screen_key"
+        android:title="@string/exit_to_home_screen_title"
+        android:persistent="true"
+        android:summary="@string/exit_to_home_screen_summary"/>
 
     <ListPreference
         android:key="button_dtmf_settings"
