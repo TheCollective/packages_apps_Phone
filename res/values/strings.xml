@@ -390,10 +390,6 @@
         <item>GSM/WCDMA preferred</item>
     </string-array>
     <string-array name="preferred_network_mode_values"  translatable="false">
-        <item>"11"</item>
-        <item>"10"</item>
-        <item>"9"</item>
-        <item>"8"</item>
         <item>"7"</item>
         <item>"6"</item>
         <item>"5"</item>
@@ -407,14 +403,25 @@
     <string-array name="preferred_network_mode_choices_lte">
         <item>LTE ONLY</item>
         <item>LTE/CMDA/EvDo/GSM/WCDMA</item>
+        <item>LTE/CDMA/EvDo</item>
         <item>LTE/CDMA</item>
         <item>CDMA/EvDo auto</item>
     </string-array>
     <string-array name="preferred_network_mode_values_lte" translatable="false">
         <item>"11"</item>
         <item>"10"</item>
+        <item>"8"</item>
         <item>"7"</item>
         <item>"4"</item>
+    </string-array>
+    <!-- Mobile network settings, network mode choices for a device supporting GSM and LTE [CHAR LIMIT=25] -->
+    <string-array name="preferred_network_mode_choices_lte_gsm">
+        <item>LTE/GSM/WCDMA</item>
+        <item>GSM/WCDMA preferred</item>
+    </string-array>
+    <string-array name="preferred_network_mode_values_lte_gsm" translatable="false">
+        <item>"9"</item>
+        <item>"0"</item>
     </string-array>
     <!-- Mobile network settings screen, data enabling checkbox name -->
     <string name="data_enabled">Data enabled</string>
