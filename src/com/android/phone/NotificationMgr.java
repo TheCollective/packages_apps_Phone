@@ -36,6 +36,7 @@ import android.net.Uri;
 import android.os.PowerManager;
 import android.os.SystemProperties;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.provider.CallLog.Calls;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.PhoneLookup;
@@ -54,7 +55,9 @@ import com.android.internal.telephony.CallerInfoAsyncQuery;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneBase;
+import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyCapabilities;
+
 
 /**
  * NotificationManager-related utility code for the Phone app.
@@ -63,12 +66,12 @@ import com.android.internal.telephony.TelephonyCapabilities;
  * framework's NotificationManager, and is used to display status bar
  * icons and control other status bar-related behavior.
  *
- * @see PhoneApp.notificationMgr
+ * @see PhoneGlobals.notificationMgr
  */
 public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteListener{
     private static final String LOG_TAG = "NotificationMgr";
     private static final boolean DBG =
-            (PhoneApp.DBG_LEVEL >= 1) && (SystemProperties.getInt("ro.debuggable", 0) == 1);
+            (PhoneGlobals.DBG_LEVEL >= 1) && (SystemProperties.getInt("ro.debuggable", 0) == 1);
     // Do not check in with VDBG = true, since that may write PII to the system log.
     private static final boolean VDBG = false;
 
@@ -90,10 +93,27 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
     static final int DATA_DISCONNECTED_ROAMING_NOTIFICATION = 7;
     static final int SELECTED_OPERATOR_FAIL_NOTIFICATION = 8;
 
+    // notification light Settings.System keys
+    private static final String NOTIFICATION_LIGHT_PULSE = "notification_light_pulse";
+    private static final String NOTIFICATION_LIGHT_PULSE_DEFAULT_COLOR = "notification_light_pulse_default_color";
+    private static final String NOTIFICATION_LIGHT_PULSE_DEFAULT_LED_ON = "notification_light_pulse_default_led_on";
+    private static final String NOTIFICATION_LIGHT_PULSE_DEFAULT_LED_OFF = "notification_light_pulse_default_led_off";
+    private static final String NOTIFICATION_LIGHT_PULSE_CUSTOM_ENABLE = "notification_light_pulse_custom_enable";
+    private static final String NOTIFICATION_LIGHT_PULSE_CALL_COLOR = "notification_light_pulse_call_color";
+    private static final String NOTIFICATION_LIGHT_PULSE_CALL_LED_ON = "notification_light_pulse_call_led_on";
+    private static final String NOTIFICATION_LIGHT_PULSE_CALL_LED_OFF = "notification_light_pulse_call_led_off";
+    private static final String NOTIFICATION_LIGHT_PULSE_VMAIL_COLOR = "notification_light_pulse_vmail_color";
+    private static final String NOTIFICATION_LIGHT_PULSE_VMAIL_LED_ON = "notification_light_pulse_vmail_led_on";
+    private static final String NOTIFICATION_LIGHT_PULSE_VMAIL_LED_OFF = "notification_light_pulse_vmail_led_off";
+
+    // notification light default constants
+    public static final int DEFAULT_COLOR = 0xFFFFFF; //White
+    public static final int DEFAULT_TIME = 1000; // 1 second
+
     /** The singleton NotificationMgr instance. */
     private static NotificationMgr sInstance;
 
-    private PhoneApp mApp;
+    private PhoneGlobals mApp;
     private Phone mPhone;
     private CallManager mCM;
 
@@ -131,7 +151,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
      * Private constructor (this is a singleton).
      * @see init()
      */
-    private NotificationMgr(PhoneApp app) {
+    private NotificationMgr(PhoneGlobals app) {
         mApp = app;
         mContext = app;
         mNotificationManager =
@@ -153,7 +173,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
      * PhoneApp's public "notificationMgr" field, which is why there's no
      * getInstance() method here.
      */
-    /* package */ static NotificationMgr init(PhoneApp app) {
+    /* package */ static NotificationMgr init(PhoneGlobals app) {
         synchronized (NotificationMgr.class) {
             if (sInstance == null) {
                 sInstance = new NotificationMgr(app);
@@ -451,12 +471,41 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
     }
 
     /**
-     * Configures a Notification to emit the blinky green message-waiting/
+     * Configures a Notification to emit the blinky message-waiting/
      * missed-call signal.
+     * @param notificationType
      */
-    private static void configureLedNotification(Notification note) {
-        note.flags |= Notification.FLAG_SHOW_LIGHTS;
-        note.defaults |= Notification.DEFAULT_LIGHTS;
+    private static void configureLedNotification(Context context, int notificationType, Notification note) {
+
+        // get the default Notification light settings
+        ContentResolver resolver = context.getContentResolver();
+        boolean lightEnabled = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE, 0) == 1;
+        int color = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_DEFAULT_COLOR, DEFAULT_COLOR);
+        int timeOn = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_DEFAULT_LED_ON, DEFAULT_TIME);
+        int timeOff = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_DEFAULT_LED_OFF, DEFAULT_TIME);
+
+        // Get Missed call and Voice mail values if they are to be used
+        boolean customEnabled = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_CUSTOM_ENABLE, 0) == 1;
+        if (customEnabled) {
+            if (notificationType == MISSED_CALL_NOTIFICATION) {
+                color = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_CALL_COLOR, DEFAULT_COLOR);
+                timeOn = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_CALL_LED_ON, DEFAULT_TIME);
+                timeOff = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_CALL_LED_OFF, DEFAULT_TIME);
+            } else if (notificationType == VOICEMAIL_NOTIFICATION) {
+                color = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_VMAIL_COLOR, DEFAULT_COLOR);
+                timeOn = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_VMAIL_LED_ON, DEFAULT_TIME);
+                timeOff = Settings.System.getInt(resolver, NOTIFICATION_LIGHT_PULSE_VMAIL_LED_OFF, DEFAULT_TIME);
+            }
+        }
+
+        // Set the LED flags if notification light is enabled
+        if (lightEnabled) {
+            note.ledARGB = color;
+            note.ledOnMS = timeOn;
+            note.ledOffMS = timeOff;
+            note.flags |= Notification.FLAG_SHOW_LIGHTS;
+            note.flags |= Notification.FLAG_FORCE_LED_SCREEN_OFF;
+        }
     }
 
     /**
@@ -482,12 +531,12 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
             String name, String number, String type, Drawable photo, Bitmap photoIcon, long date) {
 
         // When the user clicks this notification, we go to the call log.
-        final Intent callLogIntent = PhoneApp.createCallLogIntent();
+        final Intent callLogIntent = PhoneGlobals.createCallLogIntent();
 
         // Never display the missed call notification on non-voice-capable
         // devices, even if the device does somehow manage to get an
         // incoming call.
-        if (!PhoneApp.sVoiceCapable) {
+        if (!PhoneGlobals.sVoiceCapable) {
             if (DBG) log("notifyMissedCall: non-voice-capable device, not posting notification");
             return;
         }
@@ -551,11 +600,11 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
 
             builder.addAction(R.drawable.stat_sys_phone_call,
                     mContext.getString(R.string.notification_missedCall_call_back),
-                    PhoneApp.getCallBackPendingIntent(mContext, number));
+                    PhoneGlobals.getCallBackPendingIntent(mContext, number));
 
             builder.addAction(R.drawable.ic_text_holo_dark,
                     mContext.getString(R.string.notification_missedCall_message),
-                    PhoneApp.getSendSmsFromNotificationPendingIntent(mContext, number));
+                    PhoneGlobals.getSendSmsFromNotificationPendingIntent(mContext, number));
 
             if (photoIcon != null) {
                 builder.setLargeIcon(photoIcon);
@@ -569,7 +618,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
         }
 
         Notification notification = builder.getNotification();
-        configureLedNotification(notification);
+        configureLedNotification(mContext, MISSED_CALL_NOTIFICATION, notification);
         mNotificationManager.notify(MISSED_CALL_NOTIFICATION, notification);
     }
 
@@ -620,7 +669,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
     private void updateSpeakerNotification() {
         AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         boolean showNotification =
-                (mPhone.getState() == Phone.State.OFFHOOK) && audioManager.isSpeakerphoneOn();
+                (mPhone.getState() == PhoneConstants.State.OFFHOOK) && audioManager.isSpeakerphoneOn();
 
         if (DBG) log(showNotification
                      ? "updateSpeakerNotification: speaker ON"
@@ -693,7 +742,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
             return;
         }
 
-        if ((mCM.getState() == Phone.State.OFFHOOK) && PhoneUtils.getMute()) {
+        if ((mCM.getState() == PhoneConstants.State.OFFHOOK) && PhoneUtils.getMute()) {
             if (DBG) log("updateMuteNotification: MUTED");
             notifyMute();
         } else {
@@ -775,14 +824,14 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
         // Never display the "ongoing call" notification on
         // non-voice-capable devices, even if the phone is actually
         // offhook (like during a non-interactive OTASP call.)
-        if (!PhoneApp.sVoiceCapable) {
+        if (!PhoneGlobals.sVoiceCapable) {
             if (DBG) log("- non-voice-capable device; suppressing notification.");
             return;
         }
 
         // If the phone is idle, completely clean up all call-related
         // notifications.
-        if (mCM.getState() == Phone.State.IDLE) {
+        if (mCM.getState() == PhoneConstants.State.IDLE) {
             cancelInCall();
             cancelMute();
             cancelSpeakerphone();
@@ -890,7 +939,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
         // call (see the "fullScreenIntent" field below).
         PendingIntent inCallPendingIntent =
                 PendingIntent.getActivity(mContext, 0,
-                                          PhoneApp.createInCallIntent(), 0);
+                                          PhoneGlobals.createInCallIntent(), 0);
         builder.setContentIntent(inCallPendingIntent);
 
         // Update icon on the left of the notification.
@@ -987,7 +1036,16 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
                 // and translate that into the elapsedRealtime() timebase.
                 long callDurationMsec = currentConn.getDurationMillis();
                 builder.setWhen(System.currentTimeMillis() - callDurationMsec);
-                builder.setContentText(mContext.getString(R.string.notification_ongoing_call));
+
+                int contextTextId = R.string.notification_ongoing_call;
+
+                Call call = mCM.getActiveFgCall();
+                if (TelephonyCapabilities.canDistinguishDialingAndConnected(
+                        call.getPhone().getPhoneType()) && call.isDialingOrAlerting()) {
+                  contextTextId = R.string.notification_dialing;
+                }
+
+                builder.setContentText(mContext.getString(contextTextId));
             }
         } else if (DBG) {
             Log.w(LOG_TAG, "updateInCallNotification: null connection, can't set exp view line 1.");
@@ -1091,7 +1149,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
             // TODO: use better asset.
             builder.addAction(R.drawable.stat_sys_phone_call_end,
                     mContext.getText(R.string.notification_action_end_call),
-                    PhoneApp.createHangUpOngoingCallPendingIntent(mContext));
+                    PhoneGlobals.createHangUpOngoingCallPendingIntent(mContext));
         }
 
         Notification notification = builder.getNotification();
@@ -1278,7 +1336,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
             }
 
             notification.flags |= Notification.FLAG_NO_CLEAR;
-            configureLedNotification(notification);
+            configureLedNotification(mContext, VOICEMAIL_NOTIFICATION, notification);
             mNotificationManager.notify(VOICEMAIL_NOTIFICATION, notification);
         } else {
             mNotificationManager.cancel(VOICEMAIL_NOTIFICATION);

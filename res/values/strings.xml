@@ -368,19 +368,17 @@
     <string name="preferred_network_mode_evdo_only_summary">Preferred network mode: EvDo only</string>
     <!-- Mobile network settings, summary for preferred network mode LTE / CDMA[CHAR LIMIT=100] -->
     <string name="preferred_network_mode_lte_cdma_summary">Preferred network mode: LTE / CDMA</string>
-    <!-- Mobile network settings, summary for preferred network mode LTE / GSM[CHAR LIMIT=100] -->
-    <string name="preferred_network_mode_lte_gsm_summary">Preferred network mode: LTE / WCDMA / GSM</string>
-    <!-- Mobile network settings, summary for preferred network mode LTE / CDMA / EvDo[CHAR LIMIT=100] -->
+    <!-- Mobile network settings, summary for preferred network mode LTE / CDMA / EvDo [CHAR LIMIT=100] -->
     <string name="preferred_network_mode_lte_cdma_evdo_summary">Preferred network mode: LTE / CDMA / EvDo</string>
-    <!-- Mobile network settings, summary for preferred network mode LTE / CMDA / EvDo / GSM/WCDMACHAR LIMIT=100] -->
+    <!-- Mobile network settings, summary for preferred network mode LTE / GSM/WCDMA [CHAR LIMIT=100] -->
+    <string name="preferred_network_mode_lte_gsm_summary">Preferred network mode: LTE / GSM/WCDMA</string>
+    <!-- Mobile network settings, summary for preferred network mode LTE / CMDA / EvDo / GSM/WCDMA [CHAR LIMIT=100] -->
     <string name="preferred_network_mode_lte_cdma_evdo_gsm_wcdma_summary">Preferred network mode: LTE / CMDA / EvDo / GSM/WCDMA</string>
+    <!-- Mobile network settings, summary for preferred network mode LTE / WCDMA [CHAR LIMIT=100] -->
+    <string name="preferred_network_mode_lte_wcdma_summary">Preferred network mode: LTE / WCDMA</string>
 
     <string-array name="preferred_network_mode_choices">
-        <item>LTE ONLY</item>
-        <item>LTE/CMDA/EvDo/GSM/WCDMA</item>
-        <item>LTE/WCDMA/GSM</item>
-        <item>LTE/CDMA/ EvDo</item>
-        <item>LTE/CDMA</item>
+        <item>Global</item>
         <item>EvDo only</item>
         <item>CDMA w/o EvDo</item>
         <item>CDMA/EvDo auto</item>
@@ -401,14 +399,14 @@
     </string-array>
     <!-- Mobile network settings, network mode choices for a device supporting CDMA and LTE [CHAR LIMIT=25] -->
     <string-array name="preferred_network_mode_choices_lte">
-        <item>LTE ONLY</item>
+    <!--<item>LTE only</item>-->
         <item>LTE/CMDA/EvDo/GSM/WCDMA</item>
         <item>LTE/CDMA/EvDo</item>
         <item>LTE/CDMA</item>
         <item>CDMA/EvDo auto</item>
     </string-array>
     <string-array name="preferred_network_mode_values_lte" translatable="false">
-        <item>"11"</item>
+    <!--<item>"11"</item>-->
         <item>"10"</item>
         <item>"8"</item>
         <item>"7"</item>
@@ -416,10 +414,12 @@
     </string-array>
     <!-- Mobile network settings, network mode choices for a device supporting GSM and LTE [CHAR LIMIT=25] -->
     <string-array name="preferred_network_mode_choices_lte_gsm">
+        <item>LTE/WCDMA</item>
         <item>LTE/GSM/WCDMA</item>
         <item>GSM/WCDMA preferred</item>
     </string-array>
     <string-array name="preferred_network_mode_values_lte_gsm" translatable="false">
+        <item>"12"</item>
         <item>"9"</item>
         <item>"0"</item>
     </string-array>
@@ -825,6 +825,9 @@
     <string name="card_title_my_phone_number">My number is <xliff:g id="my_phone_number">%s</xliff:g></string>
 
     <!-- Notification strings -->
+    <!-- The "label" of the in-call Notification for a dialing call, used
+         as the format string for a Chronometer widget. [CHAR LIMIT=60] -->
+    <string name="notification_dialing">Dialing</string>
     <!-- Missed call notification label, used when there's exactly one missed call -->
     <string name="notification_missedCallTitle">Missed call</string>
     <!-- Missed call notification label, used when there are two or more missed calls -->
@@ -1527,9 +1530,11 @@
     <string name="noise_suppression_summary">Enable noise suppression for calls</string>
     <!-- End Noise suppression -->
 
-    <string name="phone_number_label">My phone number</string>
-    <string name="phone_number_summary">Set the phone number for this device</string>
-
-    <string name="perm_change_mobile_network">Change network (2G/3G)</string>
-    <string name="perm_change_mobile_network_desc">Application with this permission can, at any time, change between 2G data and 3G data. 3G is faster, consumes more battery, and can also cost you more money.</string>
+    <!-- Advanced Settings -->
+    <string name="advanced_setting">Advanced Settings</string>
+    <string name="vibrate_outgoing">Vibrate on answer</string>
+    <string name="vibrate_call_waiting">Vibrate on call waiting</string>
+    <string name="vibrate_hangup">Vibrate on hang up</string>
+    <string name="vibrate_45">Vibrate every 45 seconds</string>
+    <string name="vibrate_45_sum">Vibrates at the 45 second mark of every minute during outgoing calls</string>
 </resources>
