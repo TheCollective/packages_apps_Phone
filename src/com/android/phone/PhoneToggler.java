@@ -9,6 +9,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.internal.telephony.Phone;
+import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.PhoneFactory;
 
 public class PhoneToggler extends BroadcastReceiver  {
@@ -46,9 +47,9 @@ public class PhoneToggler extends BroadcastReceiver  {
                 int networkMode = intent.getExtras().getInt(NETWORK_MODE);
                 boolean networkModeOk = false;
                 int phoneType = getPhone().getPhoneType();
-                boolean isLteOnCdma = getPhone().getLteOnCdmaMode() == Phone.LTE_ON_CDMA_TRUE;
+                boolean isLteOnCdma = getPhone().getLteOnCdmaMode() == PhoneConstants.LTE_ON_CDMA_TRUE;
 
-                if (phoneType == Phone.PHONE_TYPE_GSM) {
+                if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
                     if (networkMode == Phone.NT_MODE_GSM_ONLY
                             || networkMode == Phone.NT_MODE_GSM_UMTS
                             || networkMode == Phone.NT_MODE_WCDMA_PREF
@@ -56,7 +57,7 @@ public class PhoneToggler extends BroadcastReceiver  {
                             || networkMode == Phone.NT_MODE_WCDMA_ONLY) {
                         networkModeOk = true;
                     }
-                } else if (phoneType == Phone.PHONE_TYPE_CDMA) {
+                } else if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                     if (networkMode == Phone.NT_MODE_CDMA
                             || networkMode == Phone.NT_MODE_CDMA_NO_EVDO
                             || networkMode == Phone.NT_MODE_EVDO_NO_CDMA) {
@@ -120,9 +121,9 @@ public class PhoneToggler extends BroadcastReceiver  {
             if (ar.exception == null) {
                 int modemNetworkMode = ((int[])ar.result)[0];
                 if (DBG) Log.d(LOG_TAG,"handleGetPreferredNetworkTypeResponse: modemNetworkMode = "+modemNetworkMode);
-                int settingsNetworkMode = android.provider.Settings.Secure.getInt(
+                int settingsNetworkMode = android.provider.Settings.Global.getInt(
                         getPhone().getContext().getContentResolver(),
-                        android.provider.Settings.Secure.PREFERRED_NETWORK_MODE,
+                        android.provider.Settings.Global.PREFERRED_NETWORK_MODE,
                         MobileNetworkSettings.preferredNetworkMode);
 
                 if (DBG) Log.d(LOG_TAG,"handleGetPreferredNetworkTypeReponse: settingsNetworkMode = "+settingsNetworkMode);
@@ -132,14 +133,17 @@ public class PhoneToggler extends BroadcastReceiver  {
                         modemNetworkMode == Phone.NT_MODE_GSM_ONLY ||
                         modemNetworkMode == Phone.NT_MODE_WCDMA_ONLY ||
                         modemNetworkMode == Phone.NT_MODE_GSM_UMTS ||
-                        modemNetworkMode == Phone.NT_MODE_LTE_GSM_WCDMA ||
                         modemNetworkMode == Phone.NT_MODE_CDMA ||
                         modemNetworkMode == Phone.NT_MODE_CDMA_NO_EVDO ||
                         modemNetworkMode == Phone.NT_MODE_EVDO_NO_CDMA ||
                         //A modem might report world phone sometimes
                         //but it's not true. Double check here
-                        (getPhone().getContext().getResources().getBoolean(R.bool.world_phone) == true &&
-                            modemNetworkMode == Phone.NT_MODE_GLOBAL) ) {
+                        ((getPhone().getContext().getResources().getBoolean(R.bool.world_phone) == true) &&
+                            modemNetworkMode == Phone.NT_MODE_GLOBAL) ||
+                        modemNetworkMode == Phone.NT_MODE_LTE_CDMA_AND_EVDO ||
+                        modemNetworkMode == Phone.NT_MODE_LTE_GSM_WCDMA ||
+                        modemNetworkMode == Phone.NT_MODE_LTE_CMDA_EVDO_GSM_WCDMA ||
+                        modemNetworkMode == Phone.NT_MODE_LTE_WCDMA ) {
                     if (DBG) Log.d(LOG_TAG,"handleGetPreferredNetworkTypeResponse: if 1: modemNetworkMode = "+modemNetworkMode);
 
                     //check changes in modemNetworkMode and updates settingsNetworkMode
@@ -149,9 +153,9 @@ public class PhoneToggler extends BroadcastReceiver  {
                         if (DBG) Log.d(LOG_TAG,"handleGetPreferredNetworkTypeResponse: if 2: settingsNetworkMode = "+settingsNetworkMode);
 
                         //changes the Settings.System accordingly to modemNetworkMode
-                        android.provider.Settings.Secure.putInt(
+                        android.provider.Settings.Global.putInt(
                                 getPhone().getContext().getContentResolver(),
-                                android.provider.Settings.Secure.PREFERRED_NETWORK_MODE,
+                                android.provider.Settings.Global.PREFERRED_NETWORK_MODE,
                                 settingsNetworkMode );
                     }
                     Intent intent = new Intent(NETWORK_MODE_CHANGED);
@@ -172,8 +176,8 @@ public class PhoneToggler extends BroadcastReceiver  {
         }
 
         private void resetNetworkModeToDefault() {
-            android.provider.Settings.Secure.putInt(getPhone().getContext().getContentResolver(),
-                        android.provider.Settings.Secure.PREFERRED_NETWORK_MODE,
+            android.provider.Settings.Global.putInt(getPhone().getContext().getContentResolver(),
+                        android.provider.Settings.Global.PREFERRED_NETWORK_MODE,
                         MobileNetworkSettings.preferredNetworkMode );
             //Set the Modem
             getPhone().setPreferredNetworkType(MobileNetworkSettings.preferredNetworkMode,

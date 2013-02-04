@@ -250,16 +250,13 @@ public class PhoneUtils {
         final PhoneGlobals app = PhoneGlobals.getInstance();
 
         // If the ringer is currently ringing and/or vibrating, stop it
-        // right now (before actually answering the call.)
-        app.getRinger().stopRing();
+        // right now and prevent new rings (before actually answering the call)
+        app.notifier.silenceRinger();
 
         final Phone phone = ringing.getPhone();
         final boolean phoneIsCdma = (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA);
         boolean answered = false;
         IBluetoothHeadsetPhone btPhone = null;
-
-        // enable noise suppression
-        turnOnNoiseSuppression(app.getApplicationContext(), true);
 
         // enable noise suppression
         turnOnNoiseSuppression(app.getApplicationContext(), true);
@@ -436,6 +433,10 @@ public class PhoneUtils {
         static boolean vibCallWaiting(Context context) {
             return PreferenceManager.getDefaultSharedPreferences(context)
                       .getBoolean("button_vibrate_call_waiting", false);
+        }
+        static boolean showInCallEvents(Context context) {
+            return PreferenceManager.getDefaultSharedPreferences(context)
+                      .getBoolean("button_show_ssn_key", false);
         }
     }
 
@@ -2056,10 +2057,10 @@ public class PhoneUtils {
         if (routeToAudioManager) {
             AudioManager audioManager =
                 (AudioManager) phone.getContext().getSystemService(Context.AUDIO_SERVICE);
-            log("setMuteInternal: using setMicrophoneMute(" + muted + ")...");
+            if (DBG) log("setMuteInternal: using setMicrophoneMute(" + muted + ")...");
             audioManager.setMicrophoneMute(muted);
         } else {
-            log("setMuteInternal: using phone.setMute(" + muted + ")...");
+            if (DBG) log("setMuteInternal: using phone.setMute(" + muted + ")...");
             phone.setMute(muted);
         }
         app.notificationMgr.updateMuteNotification();
@@ -2616,6 +2617,15 @@ public class PhoneUtils {
             if (phone != null) return phone;
         }
         return cm.getDefaultPhone();
+    }
+
+    public static Phone getGsmPhone(CallManager cm) {
+        for (Phone phone: cm.getAllPhones()) {
+            if (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_GSM) {
+                return phone;
+            }
+        }
+        return null;
     }
 
     public static Phone getSipPhoneFromUri(CallManager cm, String target) {
