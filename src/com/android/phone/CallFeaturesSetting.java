@@ -47,6 +47,7 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
+import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.MediaStore;
@@ -160,6 +161,11 @@ public class CallFeaturesSetting extends PreferenceActivity
     private static final String BUTTON_MWI_NOTIFICATION_KEY = "button_mwi_notification_key";
     private static final String BUTTON_VOICEMAIL_PROVIDER_KEY = "button_voicemail_provider_key";
     private static final String BUTTON_VOICEMAIL_SETTING_KEY = "button_voicemail_setting_key";
+    // New preference key for voicemail notification vibration
+    /* package */ static final String BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_KEY =
+            "button_voicemail_notification_vibrate_key";
+    // Old preference key for voicemail notification vibration. Used for migration to the new
+    // preference key only.
     /* package */ static final String BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_WHEN_KEY =
             "button_voicemail_notification_vibrate_when_key";
     /* package */ static final String BUTTON_VOICEMAIL_NOTIFICATION_RINGTONE_KEY =
@@ -188,6 +194,8 @@ public class CallFeaturesSetting extends PreferenceActivity
     private static final String SIP_SETTINGS_CATEGORY_KEY =
             "sip_settings_category_key";
 
+    private static final String FLIP_ACTION_KEY = "flip_action";
+
     private Intent mContactListIntent;
 
     /** Event for Async voicemail change call */
@@ -196,6 +204,7 @@ public class CallFeaturesSetting extends PreferenceActivity
     private static final int EVENT_FORWARDING_GET_COMPLETED = 502;
 
     private static final int MSG_UPDATE_RINGTONE_SUMMARY = 1;
+    private static final int MSG_UPDATE_VOICEMAIL_RINGTONE_SUMMARY = 2;
 
     // preferred TTY mode
     // Phone.TTY_MODE_xxx
@@ -240,6 +249,10 @@ public class CallFeaturesSetting extends PreferenceActivity
     private static final int MSG_VM_OK = 600;
     private static final int MSG_VM_NOCHANGE = 700;
 
+    // voicemail notification vibration string constants
+    private static final String VOICEMAIL_VIBRATION_ALWAYS = "always";
+    private static final String VOICEMAIL_VIBRATION_NEVER = "never";
+
     private EditPhoneNumberPreference mSubMenuVoicemailSettings;
 
     private Runnable mRingtoneLookupRunnable;
@@ -247,9 +260,12 @@ public class CallFeaturesSetting extends PreferenceActivity
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-            case MSG_UPDATE_RINGTONE_SUMMARY:
-                mRingtonePreference.setSummary((CharSequence) msg.obj);
-                break;
+                case MSG_UPDATE_RINGTONE_SUMMARY:
+                    mRingtonePreference.setSummary((CharSequence) msg.obj);
+                    break;
+                case MSG_UPDATE_VOICEMAIL_RINGTONE_SUMMARY:
+                    mVoicemailNotificationRingtone.setSummary((CharSequence) msg.obj);
+                    break;
             }
         }
     };
@@ -267,8 +283,10 @@ public class CallFeaturesSetting extends PreferenceActivity
     private CheckBoxPreference mMwiNotification;
     private ListPreference mVoicemailProviders;
     private PreferenceScreen mVoicemailSettings;
-    private ListPreference mVoicemailNotificationVibrateWhen;
+    private Preference mVoicemailNotificationRingtone;
+    private CheckBoxPreference mVoicemailNotificationVibrate;
     private SipSharedPreferences mSipSharedPreferences;
+    private ListPreference mFlipAction;
 
     private class VoiceMailProvider {
         public VoiceMailProvider(String name, Intent intent) {
@@ -595,15 +613,21 @@ public class CallFeaturesSetting extends PreferenceActivity
                 mChangingVMorFwdDueToProviderChange = true;
                 saveVoiceMailAndForwardingNumber(newProviderKey, newProviderSettings);
             }
-        } else if (preference == mVoicemailNotificationVibrateWhen) {
-            mVoicemailNotificationVibrateWhen.setValue((String) objValue);
-            mVoicemailNotificationVibrateWhen.setSummary(
-                    mVoicemailNotificationVibrateWhen.getEntry());
         } else if (preference == mButtonSipCallOptions) {
             handleSipCallOptionsChange(objValue);
+        } else if (preference == mFlipAction) {
+            updateFlipActionSummary((String) objValue);
         }
         // always let the preference setting proceed.
         return true;
+    }
+
+    private void updateFlipActionSummary(String action) {
+        int i = Integer.parseInt(action);
+        if (mFlipAction != null) {
+            String[] summaries = getResources().getStringArray(R.array.flip_action_summary_entries);
+            mFlipAction.setSummary(getString(R.string.flip_action_summary, summaries[i]));
+        }
     }
 
     @Override
@@ -1539,13 +1563,14 @@ public class CallFeaturesSetting extends PreferenceActivity
         mButtonTTY = (ListPreference) findPreference(BUTTON_TTY_KEY);
         mButtonNoiseSuppression = (CheckBoxPreference) findPreference(BUTTON_NOISE_SUPPRESSION_KEY);
         mVoicemailProviders = (ListPreference) findPreference(BUTTON_VOICEMAIL_PROVIDER_KEY);
+        mFlipAction = (ListPreference) findPreference(FLIP_ACTION_KEY);
         if (mVoicemailProviders != null) {
             mVoicemailProviders.setOnPreferenceChangeListener(this);
             mVoicemailSettings = (PreferenceScreen)findPreference(BUTTON_VOICEMAIL_SETTING_KEY);
-            mVoicemailNotificationVibrateWhen =
-                    (ListPreference) findPreference(BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_WHEN_KEY);
-            mVoicemailNotificationVibrateWhen.setOnPreferenceChangeListener(this);
-
+            mVoicemailNotificationRingtone =
+                    findPreference(BUTTON_VOICEMAIL_NOTIFICATION_RINGTONE_KEY);
+            mVoicemailNotificationVibrate =
+                    (CheckBoxPreference) findPreference(BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_KEY);
             initVoiceMailProviders();
         }
 
@@ -1610,6 +1635,10 @@ public class CallFeaturesSetting extends PreferenceActivity
             }
         }
 
+        if (mFlipAction != null) {
+            mFlipAction.setOnPreferenceChangeListener(this);
+        }
+
         if (!getResources().getBoolean(R.bool.world_phone)) {
             Preference options = prefSet.findPreference(BUTTON_CDMA_OPTIONS);
             if (options != null)
@@ -1668,6 +1697,10 @@ public class CallFeaturesSetting extends PreferenceActivity
                     updateRingtoneName(RingtoneManager.TYPE_RINGTONE, mRingtonePreference,
                             MSG_UPDATE_RINGTONE_SUMMARY);
                 }
+                if (mVoicemailNotificationRingtone != null) {
+                    updateRingtoneName(RingtoneManager.TYPE_NOTIFICATION,
+                            mVoicemailNotificationRingtone, MSG_UPDATE_VOICEMAIL_RINGTONE_SUMMARY);
+                }
             }
         };
 
@@ -1685,7 +1718,32 @@ public class CallFeaturesSetting extends PreferenceActivity
      */
     private void updateRingtoneName(int type, Preference preference, int msg) {
         if (preference == null) return;
-        Uri ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(this, type);
+        final Uri ringtoneUri;
+        boolean defaultRingtone = false;
+        if (type == RingtoneManager.TYPE_RINGTONE) {
+            // For ringtones, we can just lookup the system default because changing the settings
+            // in Call Settings changes the system default.
+            ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(this, type);
+        } else {
+            final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(
+                    mPhone.getContext());
+            // for voicemail notifications, we use the value saved in Phone's shared preferences.
+            String uriString = prefs.getString(preference.getKey(), null);
+            if (TextUtils.isEmpty(uriString)) {
+                // silent ringtone
+                ringtoneUri = null;
+            } else {
+                if (uriString.equals(Settings.System.DEFAULT_NOTIFICATION_URI.toString())) {
+                    // If it turns out that the voicemail notification is set to the system
+                    // default notification, we retrieve the actual URI to prevent it from showing
+                    // up as "Unknown Ringtone".
+                    defaultRingtone = true;
+                    ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(this, type);
+                } else {
+                    ringtoneUri = Uri.parse(uriString);
+                }
+            }
+        }
         CharSequence summary = getString(com.android.internal.R.string.ringtone_unknown);
         // Is it a silent ringtone?
         if (ringtoneUri == null) {
@@ -1704,6 +1762,10 @@ public class CallFeaturesSetting extends PreferenceActivity
             } catch (SQLiteException sqle) {
                 // Unknown title for the ringtone
             }
+        }
+        if (defaultRingtone) {
+            summary = mPhone.getContext().getString(
+                    R.string.default_notification_description, summary);
         }
         mRingtoneLookupComplete.sendMessage(mRingtoneLookupComplete.obtainMessage(msg, summary));
     }
@@ -1791,7 +1853,37 @@ public class CallFeaturesSetting extends PreferenceActivity
             updatePreferredTtyModeSummary(settingsTtyMode);
         }
 
+        if (mFlipAction != null) {
+            updateFlipActionSummary(mFlipAction.getValue());
+        }
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(
+                mPhone.getContext());
+        if (migrateVoicemailVibrationSettingsIfNeeded(prefs)) {
+            mVoicemailNotificationVibrate.setChecked(prefs.getBoolean(
+                    BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_KEY, false));
+        }
+
         lookupRingtoneName();
+    }
+
+    // Migrate settings from BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_WHEN_KEY to
+    // BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_KEY, if the latter does not exist.
+    // Returns true if migration was performed.
+    public static boolean migrateVoicemailVibrationSettingsIfNeeded(SharedPreferences prefs) {
+        if (!prefs.contains(BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_KEY)) {
+            String vibrateWhen = prefs.getString(
+                    BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_WHEN_KEY, VOICEMAIL_VIBRATION_NEVER);
+            // If vibrateWhen is always, then voicemailVibrate should be True.
+            // otherwise if vibrateWhen is "only in silent mode", or "never", then
+            // voicemailVibrate = False.
+            boolean voicemailVibrate = vibrateWhen.equals(VOICEMAIL_VIBRATION_ALWAYS);
+            final SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean(BUTTON_VOICEMAIL_NOTIFICATION_VIBRATE_KEY, voicemailVibrate);
+            editor.commit();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1899,8 +1991,7 @@ public class CallFeaturesSetting extends PreferenceActivity
             mVoicemailSettings.setEnabled(false);
             mVoicemailSettings.setIntent(null);
 
-            mVoicemailNotificationVibrateWhen.setEnabled(false);
-            mVoicemailNotificationVibrateWhen.setSummary("");
+            mVoicemailNotificationVibrate.setEnabled(false);
         } else {
             if (DBG) {
                 log("updateVMPreferenceWidget: provider for the key \"" + key + "\".."
@@ -1912,9 +2003,7 @@ public class CallFeaturesSetting extends PreferenceActivity
             mVoicemailSettings.setEnabled(true);
             mVoicemailSettings.setIntent(provider.intent);
 
-            mVoicemailNotificationVibrateWhen.setEnabled(true);
-            mVoicemailNotificationVibrateWhen.setSummary(
-                    mVoicemailNotificationVibrateWhen.getEntry());
+            mVoicemailNotificationVibrate.setEnabled(true);
         }
     }
 

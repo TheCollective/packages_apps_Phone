@@ -61,7 +61,6 @@
     <uses-permission android:name="android.permission.WRITE_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS_NO_CONFIRMATION" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SET_TIME_ZONE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -96,7 +95,6 @@
     <application android:name="PhoneApp"
                  android:persistent="true"
                  android:label="@string/phoneAppLabel"
-
                  android:icon="@mipmap/ic_launcher_phone">
             <provider android:name="IccProvider"
                       android:authorities="icc"
@@ -109,7 +107,7 @@
         <activity android:name="EmergencyDialer"
             android:label="@string/emergencyDialerIconLabel"
             android:theme="@style/EmergencyDialerTheme"
-            android:screenOrientation="nosensor">
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="com.android.phone.EmergencyDialer.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
