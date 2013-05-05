@@ -392,6 +392,7 @@
     <string name="card_title_redialing" msgid="4831412164303596395">"Повторная попытка"</string>
     <string name="card_title_conf_call" msgid="1162980346189744501">"Конференц-вызов"</string>
     <string name="card_title_incoming_call" msgid="7364539451234646909">"Входящий вызов"</string>
+    <string name="card_title_waiting_call">Ожидание вызова</string>
     <string name="card_title_call_ended" msgid="5544730338889702298">"Вызов завершен"</string>
     <string name="card_title_on_hold" msgid="821463117892339942">"Ждет ответа"</string>
     <string name="card_title_hanging_up" msgid="3999101620995182450">"Завершение разговора"</string>
@@ -614,7 +615,8 @@
     <string name="description_target_decline" msgid="4789834364389731957">"Отклонить"</string>
     <string name="voicemail_notification_vibrate_when_title" msgid="8361970092063604886">"Вибросигнал"</string>
     <string name="voicemail_notification_vibarte_when_dialog_title" msgid="5739583146522136440">"Вибросигнал"</string>
-    <string name="voicemail_notification_ringtone_title" msgid="2512535133814478358">"Рингтон"</string>
+    <string name="voicemail_notification_ringtone_title" msgid="2609519527849101590">"Звук"</string>
+    <string name="default_notification_description" msgid="78174796906240970">"По умолчанию (<xliff:g id="DEFAULT_SOUND_TITLE">%1$s</xliff:g>)"</string>
   <string-array name="voicemail_notification_vibrate_when_entries">
     <item msgid="468237575962916558">"Всегда"</item>
     <item msgid="1595097872875714252">"Только в тихом режиме"</item>
@@ -623,33 +625,6 @@
     <string name="ringtone_title" msgid="6374978286202084684">"Рингтон"</string>
     <string name="vibrate_on_ring_title" msgid="9197564612065258960">"Вибросигнал и рингтон"</string>
     <string name="dtmf_tone_enable_title" msgid="827601042915852989">"Звук клавиш"</string>
-    <string name="preference_category_ringtone" msgid="9007490591910078324">"Рингтон"</string>
+    <string name="preference_category_ringtone" msgid="5197960752529332721">"Рингтон и вибросигнал"</string>
 
-    <!-- Noise suppression -->
-    <string name="noise_suppression_title">Шумоподавление</string>
-    <string name="noise_suppression_summary">Включить шумоподавление в телефонных разговорах</string>
-
-    <!-- CYANOGENMOD ADDITIONS START -->
-
-    <!-- Dialer UI Settings -->
-    <string name="dialer_ui_settings_title">Настройки кнопок</string>
-    <string name="dialer_ui_settings_summary">Настройки номеронабирателя</string>
-
-    <!-- Advanced Phone Settings -->
-    <string name="advanced_setting">Дополнительные настройки</string>
-    <string name="vibrate_outgoing">Вибрировать при ответе</string>
-    <string name="vibrate_call_waiting">Вибрировать при ожидании</string>
-    <string name="vibrate_hangup">Вибрировать при отбое</string>
-    <string name="vibrate_45">Вибрировать каждые 45 сек</string>
-    <string name="vibrate_45_sum">Вибрировать каждые 45 секунд в течение исходящего звонка</string>
-    <string name="show_ssn_label">Уведомления о событиях</string>
-    <string name="show_ssn_summary">Показывать уведомления различных событий, связанных с сетью обработки вызовов</string>
-
-    <string name="national_roaming">Национальный роуминг</string>
-    <string name="national_roaming_enable">Подключаться к службам передачи данных в национальном роуминге</string>
-    <string name="national_roaming_disable">Не подключаться к службам передачи данных в национальном роуминге</string>
-
-    <string name="perm_change_mobile_network">Изменение сети (2G/3G)</string>
-    <string name="perm_change_mobile_network_desc">Приложение, имеющее данное разрешение, может в любое время переключать режимы связи между 2G и 3G. Режим 3G имеет более высокую скорость и большее потребление энергии.</string>
-    <!-- CYANOGENMOD ADDITIONS END -->
 </resources>

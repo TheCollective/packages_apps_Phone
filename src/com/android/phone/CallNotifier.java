@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Blacklist - Copyright (C) 2013 The CyanogenMod Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@ import com.android.internal.telephony.Call;
 import com.android.internal.telephony.CallManager;
 import com.android.internal.telephony.CallerInfo;
 import com.android.internal.telephony.CallerInfoAsyncQuery;
+import com.android.internal.telephony.CallStateException;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneConstants;
@@ -30,15 +32,17 @@ import com.android.internal.telephony.cdma.CdmaInformationRecords.CdmaDisplayInf
 import com.android.internal.telephony.cdma.CdmaInformationRecords.CdmaSignalInfoRec;
 import com.android.internal.telephony.cdma.SignalToneUtil;
 import com.android.internal.telephony.gsm.SuppServiceNotification;
-import com.android.internal.telephony.CallManager;
-import com.android.phone.CallFeaturesSetting;
 
 import android.app.ActivityManagerNative;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.Intent;
+import android.content.res.Resources;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.net.Uri;
@@ -170,7 +174,7 @@ public class CallNotifier extends Handler
 
     private boolean mNextGsmCallIsForwarded;
     private Set<Connection> mForwardedCalls;
-    private Set<Call> mWaitingCalls;
+    private Set<Connection> mWaitingCalls;
 
     // ToneGenerator instance for playing SignalInfo tones
     private ToneGenerator mSignalInfoToneGenerator;
@@ -197,6 +201,9 @@ public class CallNotifier extends Handler
     private AudioManager mAudioManager;
     private Vibrator mVibrator;
 
+    // Blacklist handling
+    private static final String BLACKLIST = "Blacklist";
+
     /**
      * Initialize the singleton CallNotifier instance.
      * This is only done once, at startup, from PhoneApp.onCreate().
@@ -220,7 +227,7 @@ public class CallNotifier extends Handler
         mCallLog = callLog;
 
         mForwardedCalls = new HashSet<Connection>();
-        mWaitingCalls = new HashSet<Call>();
+        mWaitingCalls = new HashSet<Connection>();
 
         mAudioManager = (AudioManager) mApplication.getSystemService(Context.AUDIO_SERVICE);
         mVibrator = (Vibrator) mApplication.getSystemService(Context.VIBRATOR_SERVICE);
@@ -265,8 +272,13 @@ public class CallNotifier extends Handler
         return false;
     }
 
-    public boolean isCallHeldRemotely(Call call) {
-        return mWaitingCalls.contains(call);
+    public boolean isCallWaiting(Call call) {
+        for (Connection c : mWaitingCalls) {
+            if (call.hasConnection(c)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -448,6 +460,29 @@ public class CallNotifier extends Handler
             // event.  There's nothing we can do here, so just bail out
             // without doing anything.  (But presumably we'll log it in
             // the call log when the disconnect event comes in...)
+            return;
+        }
+
+        // Blacklist handling
+        String number = c.getAddress();
+        if (TextUtils.isEmpty(number)) {
+            number = Blacklist.PRIVATE_NUMBER;
+        }
+        if (DBG) log("Incoming number is: " + number);
+        // See if the number is in the blacklist
+        // Result is one of: MATCH_NONE, MATCH_LIST or MATCH_REGEX
+        int listType = mApplication.blackList.isListed(number);
+        if (listType != Blacklist.MATCH_NONE) {
+            // We have a match, set the user and hang up the call and notify
+            if (DBG) log("Incoming call from " + number + " blocked.");
+            c.setUserData(BLACKLIST);
+            try {
+                c.hangup();
+                mApplication.notificationMgr.notifyBlacklistedCall(number,
+                        c.getCreateTime(), listType);
+            } catch (CallStateException e) {
+                e.printStackTrace();
+            }
             return;
         }
 
@@ -841,6 +876,7 @@ public class CallNotifier extends Handler
                     callDurationMsec = callDurationMsec % 60000;
                     start45SecondVibration(callDurationMsec);
                 }
+                mWaitingCalls.remove(c);
             }
 
             // make sure audio is in in-call mode now
@@ -1086,7 +1122,7 @@ public class CallNotifier extends Handler
 
         if (c != null) {
             mForwardedCalls.remove(c);
-            mWaitingCalls.remove(c.getCall());
+            mWaitingCalls.remove(c);
         }
 
         int autoretrySetting = 0;
@@ -1108,6 +1144,12 @@ public class CallNotifier extends Handler
         }
 
         if (c != null) {
+            Object o = c.getUserData();
+            if (BLACKLIST.equals(o)) {
+                if (VDBG) Log.i(LOG_TAG, "in blacklist so skip calllog");
+                return;
+            }
+
             boolean vibHangup = PhoneUtils.PhoneSettings.vibHangup(mApplication);
             if (vibHangup && c.getDurationMillis() > 0) {
                 vibrate(50, 100, 50);
@@ -1242,8 +1284,14 @@ public class CallNotifier extends Handler
             // Set the "type" to be displayed in the call log (see constants in CallLog.Calls)
             final int callLogType;
             if (c.isIncoming()) {
-                callLogType = (cause == Connection.DisconnectCause.INCOMING_MISSED ?
-                               Calls.MISSED_TYPE : Calls.INCOMING_TYPE);
+                if (cause == Connection.DisconnectCause.INCOMING_MISSED) {
+                    callLogType = Calls.MISSED_TYPE;
+                } else if (cause == Connection.DisconnectCause.INCOMING_REJECTED
+                        && PhoneUtils.PhoneSettings.markRejectedCallsAsMissed(mApplication)) {
+                    callLogType = Calls.MISSED_TYPE;
+                } else {
+                    callLogType = Calls.INCOMING_TYPE;
+                }
             } else {
                 callLogType = Calls.OUTGOING_TYPE;
             }
@@ -2133,13 +2181,13 @@ public class CallNotifier extends Handler
 
     private void onSuppServiceNotification(AsyncResult r) {
         SuppServiceNotification notification = (SuppServiceNotification) r.result;
+        Phone gsmPhone = PhoneUtils.getGsmPhone(mCM);
 
         if (DBG) log("SS Notification: " + notification);
 
         if (notification.notificationType == SuppServiceNotification.NOTIFICATION_TYPE_MT) {
             if (notification.code == SuppServiceNotification.MT_CODE_FORWARDED_CALL
                     || notification.code == SuppServiceNotification.MT_CODE_DEFLECTED_CALL) {
-                Phone gsmPhone = PhoneUtils.getGsmPhone(mCM);
                 Call ringing = gsmPhone.getRingingCall();
                 if (ringing.getState().isRinging()) {
                     mForwardedCalls.add(PhoneUtils.getConnection(gsmPhone, ringing));
@@ -2149,13 +2197,20 @@ public class CallNotifier extends Handler
             }
 
             if (notification.code == SuppServiceNotification.MT_CODE_CALL_ON_HOLD) {
-                Call call = PhoneUtils.getCurrentCall(PhoneUtils.getGsmPhone(mCM));
+                Call call = PhoneUtils.getCurrentCall(gsmPhone);
                 if (call.getState() == Call.State.ACTIVE) {
-                    mWaitingCalls.add(call);
+                    mWaitingCalls.add(PhoneUtils.getConnection(gsmPhone, call));
                 }
             } else if (notification.code == SuppServiceNotification.MT_CODE_CALL_RETRIEVED) {
-                Call call = PhoneUtils.getCurrentCall(PhoneUtils.getGsmPhone(mCM));
-                mWaitingCalls.remove(call);
+                Call call = PhoneUtils.getCurrentCall(gsmPhone);
+                mWaitingCalls.remove(PhoneUtils.getConnection(gsmPhone, call));
+            }
+        } else if (notification.notificationType == SuppServiceNotification.NOTIFICATION_TYPE_MO) {
+            if (notification.code == SuppServiceNotification.MO_CODE_CALL_IS_WAITING) {
+                Call call = PhoneUtils.getCurrentCall(gsmPhone);
+                if (call.getState().isDialing()) {
+                    mWaitingCalls.add(PhoneUtils.getConnection(gsmPhone, call));
+                }
             }
         }
 
@@ -2187,10 +2242,6 @@ public class CallNotifier extends Handler
                 case SuppServiceNotification.MO_CODE_CALL_FORWARDED:
                     //This message is displayed on A when the outgoing call actually gets forwarded to C
                     return R.string.call_notif_MOcall_forwarding;
-                case SuppServiceNotification.MO_CODE_CALL_IS_WAITING:
-                    //This message is displayed on A when the B is busy on another call
-                    //and Call waiting is enabled on B
-                    return R.string.call_notif_calliswaiting;
                 case SuppServiceNotification.MO_CODE_CUG_CALL:
                     //This message is displayed on A, when A makes call to B, both A & B
                     //belong to a CUG group
