@@ -60,6 +60,7 @@ import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneBase;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyCapabilities;
+import com.android.internal.telephony.util.BlacklistUtils;
 
 import java.util.ArrayList;
 
@@ -535,7 +536,6 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
             note.ledOnMS = timeOn;
             note.ledOffMS = timeOff;
             note.flags |= Notification.FLAG_SHOW_LIGHTS;
-            note.flags |= Notification.FLAG_FORCE_LED_SCREEN_OFF;
         }
     }
 
@@ -595,7 +595,6 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
 
         Notification.Builder builder = new Notification.Builder(mContext);
         builder.setSmallIcon(android.R.drawable.stat_notify_missed_call)
-                .setNumber(mMissedCalls.size())
                 .setTicker(mContext.getString(R.string.notification_missedCallTicker, callName))
                 .setWhen(date)
                 .setContentIntent(PendingIntent.getActivity(mContext, 0, callLogIntent, 0))
@@ -703,7 +702,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
     }
 
     /* package */ void notifyBlacklistedCall(String number, long date, int matchType) {
-        if (!PhoneUtils.PhoneSettings.isBlacklistNotifyEnabled(mContext)) {
+        if (!BlacklistUtils.isBlacklistNotifyEnabled(mContext)) {
             return;
         }
 
@@ -712,12 +711,15 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
                 + ", match type: " + matchType + ", date: " + date);
         }
 
-        // keep track of the call, keeping list sorted from newest to oldest
+        // Keep track of the call, keeping list sorted from newest to oldest
         mBlacklistedCalls.add(0, new BlacklistedCallInfo(number, date, matchType));
 
-        PendingIntent blSettingsIntent = PendingIntent.getActivity(mContext,
-                0, new Intent(mContext, BlacklistSetting.class), 0);
+        // Get the intent to open Blacklist settings if user taps on content ready
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.setClassName("com.android.settings", "com.android.settings.Settings$BlacklistSettingsActivity");
+        PendingIntent blSettingsIntent = PendingIntent.getActivity(mContext, 0, intent, 0);
 
+        // Start building the notification
         Notification.Builder builder = new Notification.Builder(mContext);
         builder.setSmallIcon(R.drawable.ic_block_contact_holo_dark)
                 .setContentIntent(blSettingsIntent)
@@ -733,10 +735,10 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
         if (mBlacklistedCalls.size() == 1) {
             String message;
             switch (matchType) {
-                case Blacklist.MATCH_PRIVATE:
+                case BlacklistUtils.MATCH_PRIVATE:
                     message = mContext.getString(R.string.blacklist_notification_private_number);
                     break;
-                case Blacklist.MATCH_UNKNOWN:
+                case BlacklistUtils.MATCH_UNKNOWN:
                     message = mContext.getString(R.string.blacklist_notification_unknown_number, number);
                     break;
                 default:
@@ -744,7 +746,7 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
             }
             builder.setContentText(message);
 
-            if (matchType != Blacklist.MATCH_LIST) {
+            if (matchType != BlacklistUtils.MATCH_LIST) {
                 addUnblockAction = false;
             }
         } else {
@@ -757,15 +759,15 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
             Notification.InboxStyle style = new Notification.InboxStyle(builder);
 
             for (BlacklistedCallInfo info : mBlacklistedCalls) {
-                // Takes care of displaying "Private" instead of "0000"
-                String numberString = Blacklist.PRIVATE_NUMBER.equals(info.number)
+                // Takes care of displaying "Private" instead of an empty string
+                String numberString = TextUtils.isEmpty(info.number)
                         ? mContext.getString(R.string.blacklist_notification_list_private)
                         : info.number;
                 style.addLine(formatSingleCallLine(numberString, info.date));
 
                 if (!TextUtils.equals(number, info.number)) {
                     addUnblockAction = false;
-                } else if (info.matchType != Blacklist.MATCH_LIST) {
+                } else if (info.matchType != BlacklistUtils.MATCH_LIST) {
                     addUnblockAction = false;
                 }
             }
@@ -1556,22 +1558,20 @@ public class NotificationMgr implements CallerInfoAsyncQuery.OnQueryCompleteList
         if (DBG) log("showDataDisconnectedRoaming()...");
 
         // "Mobile network settings" screen / dialog
-        Intent intent = new Intent(mContext,
-                com.android.phone.MobileNetworkSettings.class);
+        Intent intent = new Intent(mContext, com.android.phone.MobileNetworkSettings.class);
 
-        Notification notification = new Notification(
-                android.R.drawable.stat_sys_warning, // icon
-                null, // tickerText
-                System.currentTimeMillis());
-        notification.setLatestEventInfo(
-                mContext, // Context
-                mContext.getString(R.string.roaming), // expandedTitle
-                mContext.getString(R.string.roaming_reenable_message), // expandedText
-                PendingIntent.getActivity(mContext, 0, intent, 0)); // contentIntent
+        final CharSequence contentText = mContext.getText(R.string.roaming_reenable_message);
 
-        mNotificationManager.notify(
-                DATA_DISCONNECTED_ROAMING_NOTIFICATION,
-                notification);
+        final Notification.Builder builder = new Notification.Builder(mContext);
+        builder.setSmallIcon(android.R.drawable.stat_sys_warning);
+        builder.setContentTitle(mContext.getText(R.string.roaming));
+        builder.setContentText(contentText);
+        builder.setContentIntent(PendingIntent.getActivity(mContext, 0, intent, 0));
+
+        final Notification notif = new Notification.BigTextStyle(builder).bigText(contentText)
+                .build();
+
+        mNotificationManager.notify(DATA_DISCONNECTED_ROAMING_NOTIFICATION, notif);
     }
 
     /**

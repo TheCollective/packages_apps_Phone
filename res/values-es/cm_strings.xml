@@ -20,10 +20,8 @@
     <string name="callUnanswered_forwarded">Llamada perdida reenviada</string>
     <string name="mwi_notification_title">Notificación buzón de voz</string>
     <string name="mwi_notification_summary">Mostrar una notificación para los mensajes en espera del buzón de voz</string>
-    <string name="preferred_network_mode_lte_cdma_evdo_summary">Modo de red preferido: LTE / CDMA / EvDo</string>
     <string name="preferred_network_mode_lte_gsm_summary">Modo de red preferido: LTE / WCDMA/GSM</string>
     <string name="preferred_network_mode_lte_cdma_evdo_gsm_wcdma_summary">Modo de red preferido: LTE / CMDA / EvDo / GSM/WCDMA</string>
-    <string name="preferred_network_mode_lte_wcdma_summary">Modo de red preferido: LTE / WCDMA</string>
     <string name="card_title_dialing_waiting">Llamando (esperando\u2026)</string>
     <string name="card_title_waiting_call">Llamada en espera</string>
     <string name="call_notif_unconditionalCF">Desvío incondicional de llamada activo</string>
@@ -41,8 +39,6 @@
     <string name="call_notif_callconnectingect">Llamada conectándose por centralita</string>
     <string name="call_notif_callconnectedect">Llamada conectada por centralita</string>
     <string name="incall_call_type_label_forwarded">Llamada desviada</string>
-    <string name="dialer_ui_settings_title">Ajustes de marcación</string>
-    <string name="dialer_ui_settings_summary">Ajustes del teclado de marcación</string>
     <string name="noise_suppression_title">Supresor de ruido</string>
     <string name="noise_suppression_summary">Activar la supresión de ruido durante las llamadas</string>
     <string name="advanced_setting">Configuración avanzada</string>
@@ -58,27 +54,18 @@
     <string name="calllog_after_call">Mostrar registro</string>
     <string name="calllog_after_call_summary">Mostrar el registro de la llamada al colgar</string>
     <string name="national_roaming">Itinerancia de datos nacional</string>
-    <string name="national_roaming_enable">Establecer conexión con servicios de datos en itinerancia nacional</string>
-    <string name="national_roaming_disable">No establecer conexión con servicios de datos en itinerancia nacional</string>
+    <string name="national_roaming_summary">Establecer conexión con servicios de datos en itinerancia nacional</string>
     <string name="perm_change_mobile_network">Cambiar red (2G/3G)</string>
     <string name="perm_change_mobile_network_desc">Las aplicaciones con este permiso pueden, en cualquier momento, cambiar entre datos 2G y 3G. Es más rápido 3G, pero consume más batería y puede costar más dinero.</string>
     <string name="flip_action_title">Acción al voltear</string>
     <string name="flip_action_dialog_title">Al voltear\u2026</string>
     <string name="flip_action_summary">Al voltear el terminal, <xliff:g id="action">%s</xliff:g></string>
     <string name="blacklist_title">Lista negra</string>
-    <string name="enable_blacklist_title">Activar lista negra</string>
-    <string name="blacklist_summary_disabled">Desactivada</string>
-    <string name="blacklist_summary">Las llamadas entrantes de los números de la lista negra serán bloqueadas</string>
-    <string name="blacklist_notify">Mostrar notificación</string>
-    <string name="blacklist_private_numbers_title">Números privados</string>
-    <string name="blacklist_private_numbers_summary">Bloquear llamadas entrantes de números privados</string>
-    <string name="blacklist_unknown_numbers_title">Números desconocidos</string>
-    <string name="blacklist_unknown_numbers_summary">Bloquear llamadas entrantes de números que no estén en la lista de contactos</string>
-    <string name="blacklist_regex_title">Permitir comodines</string>
-    <string name="blacklist_regex_summary">Usar \u00AB.\u00BB como comodín y \u00AB*\u00BB para repetición. Por ejemplo \u00AB123.*\u00BB bloqueará números que comiencen por 123 y \u00AB.*123.*\u00BB bloqueará números que contengan 123</string>
+    <string name="blacklist_summary_disabled">Deshabilitada</string>
+    <string name="blacklist_summary">Las llamadas entrantes de los números en la lista negra serán bloqueadas</string>
     <string name="add_blacklist_number">Añadir número de teléfono</string>
     <string name="add_to_blacklist">Añadir a la lista negra</string>
-    <string name="add_to_blacklist_message">Serán bloqueadas las llamadas futuras de %s</string>
+    <string name="add_to_blacklist_message">Las llamadas de %s serán bloqueadas</string>
     <string name="remove_blacklist_number_title">Quitar número de teléfono</string>
     <string name="remove_blacklist_number">¿Quitar %s de la lista negra?</string>
     <string name="blacklist_notification">Llamada de %s, bloqueada</string>
@@ -94,4 +81,6 @@
     <string name="voice_quality_entry_clear">Clara</string>
     <string name="voice_quality_entry_crisp">Nítida</string>
     <string name="voice_quality_entry_bright">Fuerte</string>
+    <string name="phone_number_label">Mi número de teléfono</string>
+    <string name="phone_number_summary">Establecer el número de teléfono para este dispositivo</string>
 </resources>

@@ -75,6 +75,7 @@ import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyCapabilities;
 import com.android.internal.telephony.gsm.SuppServiceNotification;
+import com.android.internal.telephony.util.BlacklistUtils;
 import com.android.phone.Constants.CallStatusCode;
 import com.android.phone.InCallUiState.InCallScreenMode;
 import com.android.phone.OtaUtils.CdmaOtaScreenState;
@@ -1146,6 +1147,15 @@ public class InCallScreen extends Activity
             moveTaskToBack(true);
         }
         setInCallScreenMode(InCallScreenMode.UNDEFINED);
+
+        // Call update screen so that the in-call screen goes back to a normal state.
+        // This avoids bugs where a previous state will filcker the next time phone is
+        // opened.
+        updateScreen();
+
+        if (mCallCard != null) {
+            mCallCard.clear();
+        }
     }
 
     /**
@@ -2845,7 +2855,8 @@ public class InCallScreen extends Activity
                 .setMessage(message)
                 .setPositiveButton(R.string.alert_dialog_yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        PhoneGlobals.getInstance().blackList.add(number);
+                        BlacklistUtils.addOrUpdate(getApplicationContext(), number,
+                                BlacklistUtils.BLOCK_CALLS, BlacklistUtils.BLOCK_CALLS);
                         internalHangup();
                     }
                 })
@@ -3706,17 +3717,6 @@ public class InCallScreen extends Activity
             // Call origin is valid only with outgoing calls. Disable it on incoming calls.
             mApp.setLatestActiveCallOrigin(null);
         }
-    }
-
-    /**
-     * Answer the ringing call *and* hang up the ongoing call.
-     */
-    private void internalAnswerAndEnd() {
-        if (DBG) log("internalAnswerAndEnd()...");
-        if (VDBG) PhoneUtils.dumpCallManager();
-        // In the rare case when multiple calls are ringing, the UI policy
-        // it to always act on the first ringing call.
-        PhoneUtils.answerAndEndActive(mCM, mCM.getFirstActiveRingingCall());
     }
 
     /**

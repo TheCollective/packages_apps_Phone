@@ -16,8 +16,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="perm_change_mobile_network">Змінення режиму мережі (2G/3G)</string>
     <string name="perm_change_mobile_network_desc">Програма з цими правами може в будь-який момент змінити режим мережі. 3G швидше, але споживає більше енергії, а також може тарифікуватися дорожче.</string>
-    <string name="dialer_ui_settings_title">Налаштування кнопок</string>
-    <string name="dialer_ui_settings_summary">Налаштування номеронабирача</string>
     <string name="advanced_setting">Додаткові налаштування</string>
     <string name="vibrate_outgoing">Вібрувати при відповіді</string>
     <string name="vibrate_call_waiting">Вібрувати при очікуванні</string>
@@ -27,8 +25,7 @@
     <string name="show_ssn_label">Сповіщення про події</string>
     <string name="show_ssn_summary">Сповіщати про різні події, пов’язані з мережею обробки викликів</string>
     <string name="national_roaming">Національний роумінг</string>
-    <string name="national_roaming_enable">Використовувати передачу даних в національному роумінгу</string>
-    <string name="national_roaming_disable">Не використовувати передачу даних в національному роумінгу</string>
+    <string name="national_roaming_summary">Використовувати передачу даних в національному роумінгу</string>
     <string name="flip_action_title">Переворот телефону</string>
     <string name="flip_action_dialog_title">Вибір дії\u2026</string>
     <string name="flip_action_summary">Перевернувши телефон екраном вниз <xliff:g id="action">%s</xliff:g></string>

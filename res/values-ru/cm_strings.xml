@@ -19,10 +19,6 @@
     <string name="noise_suppression_title">Шумоподавление</string>
     <string name="noise_suppression_summary">Включить шумоподавление в телефонных разговорах</string>
 
-    <!-- Dialer UI Settings -->
-    <string name="dialer_ui_settings_title">Настройки кнопок</string>
-    <string name="dialer_ui_settings_summary">Настройки номеронабирателя</string>
-
     <!-- Advanced Phone Settings -->
     <string name="advanced_setting">Дополнительные настройки</string>
     <string name="vibrate_outgoing">Вибрировать при ответе</string>
@@ -36,8 +32,7 @@
     <string name="show_ssn_summary">Показывать уведомления различных событий, связанных с сетью обработки вызовов</string>
 
     <string name="national_roaming">Национальный роуминг</string>
-    <string name="national_roaming_enable">Подключаться к службам передачи данных в национальном роуминге</string>
-    <string name="national_roaming_disable">Не подключаться к службам передачи данных в национальном роуминге</string>
+    <string name="national_roaming_summary">Подключаться к службам передачи данных в национальном роуминге</string>
 
     <string name="perm_change_mobile_network">Изменение сети (2G/3G)</string>
     <string name="perm_change_mobile_network_desc">Приложение, имеющее данное разрешение, может в любое время переключать режимы связи между 2G и 3G. Режим 3G имеет более высокую скорость и большее потребление энергии.</string>
@@ -51,21 +46,6 @@
     <!-- Setting summary for the flip action setting. -->
     <string name="flip_action_summary">Перевернув телефон экраном вниз <xliff:g id="action">%s</xliff:g></string>
 
-    <!-- Entries listed in the setting for the flip action. -->
-    <string-array name="flip_action_setting_entries">
-        <item>Ничего не делать</item>
-        <item>Выключить звонок</item>
-        <item>Сбросить звонок</item>
-    </string-array>
-
-    <!-- Summary texts for flip action. Must be ordered by numerical
-         value (do nothing = 0, mute = 1, dismiss = 2) -->
-    <string-array name="flip_action_summary_entries">
-        <item>ничего не делать</item>
-        <item>выключить звонок</item>
-        <item>сбросить звонок</item>
-    </string-array>
-
     <string name="card_title_dialing_waiting">Набор номера (ожидание\u2026)</string>
 
     <string name="calllog_after_call">Показать журнал</string>
@@ -73,14 +53,8 @@
 
     <!-- Blacklist preferences -->
     <string name="blacklist_title">Чёрный список</string>
-    <string name="enable_blacklist_title">Включить чёрный список</string>
     <string name="blacklist_summary_disabled">Выключен</string>
     <string name="blacklist_summary">Входящие звонки от абонентов из чёрного списка будут отклоняться</string>
-    <string name="blacklist_notify">Показывать уведомления</string>
-    <string name="blacklist_private_numbers_title">Неизвестные номера</string>
-    <string name="blacklist_private_numbers_summary">Блокировать входящие номера от неизвестных номеров</string>
-    <string name="blacklist_regex_title">Маски</string>
-    <string name="blacklist_regex_summary">Используйте . как маску и * для повторения. Например: 123.* блокирует номера, начинающиеся с 123 и .*123.* номера, содержащие 123</string>
 
     <!-- Blacklist management -->
     <string name="add_blacklist_number">Добавить номер телефона</string>
@@ -92,6 +66,8 @@
     <!-- Blacklist notifications -->
     <string name="blacklist_notification">Вызов от %s отклонён</string>
     <string name="blacklist_notification_private_number">Вызов от неизвестного номера отклонён</string>
+    <string name="blacklist_notification_list_private">Скрытый</string>
+    <string name="blacklist_notification_unknown_number">Заблокирован неизвестный номер %s</string>
     <string name="blacklist_notification_multiple"><xliff:g id="count">%d</xliff:g> звонка (ов) было отклонено</string>
     <string name="unblock_number">Разблокировать</string>
 
@@ -106,5 +82,7 @@
     <string name="voice_quality_entry_clear">Чистый</string>
     <string name="voice_quality_entry_crisp">Чёткий</string>
     <string name="voice_quality_entry_bright">Ясный</string>
+
+    <string name="enter_input">USSD-запрос должен быть от <xliff:g id="min_len" >%d</xliff:g> до <xliff:g id="max_len" >%d</xliff:g> символов. Пожалуйста, попробуйте ещё раз.</string>
 
 </resources>

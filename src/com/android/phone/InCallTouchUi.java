@@ -49,6 +49,7 @@ import com.android.internal.telephony.CallManager;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneConstants;
+import com.android.internal.telephony.util.BlacklistUtils;
 import com.android.internal.widget.multiwaveview.GlowPadView;
 import com.android.internal.widget.multiwaveview.GlowPadView.OnTriggerListener;
 import com.android.phone.InCallUiState.InCallScreenMode;
@@ -100,6 +101,7 @@ public class InCallTouchUi extends FrameLayout
     private ImageButton mSwapButton;
     private ImageButton mAddBlacklistButton;
     private View mHoldSwapSpacer;
+    private View mBlacklistSpacer;
 
     // "Extra button row"
     private ViewStub mExtraButtonRow;
@@ -192,6 +194,7 @@ public class InCallTouchUi extends FrameLayout
         mSwapButton.setOnClickListener(this);
         mSwapButton.setOnLongClickListener(this);
         mHoldSwapSpacer = mInCallControls.findViewById(R.id.holdSwapSpacer);
+        mBlacklistSpacer = mInCallControls.findViewById(R.id.blacklistSpacer);
 
         // Blacklist functionality
         mAddBlacklistButton = (ImageButton) mInCallControls.findViewById(R.id.addBlacklistButton);
@@ -551,9 +554,10 @@ public class InCallTouchUi extends FrameLayout
 
         // "Add to black list"
         if (mAddBlacklistButton != null) {
-            boolean visible = PhoneUtils.PhoneSettings.isBlacklistEnabled(getContext()) &&
+            boolean visible = BlacklistUtils.isBlacklistEnabled(getContext()) &&
                     inCallControlState.canBlacklistCall;
             mAddBlacklistButton.setVisibility(visible ? View.VISIBLE : View.GONE);
+            mBlacklistSpacer.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
 
         // "Hold" / "Swap":
@@ -1181,6 +1185,10 @@ public class InCallTouchUi extends FrameLayout
         ViewPropertyAnimator animator = mIncomingCallWidget.animate();
         if (animator != null) {
             animator.cancel();
+            // If animation is cancelled before it's running,
+            // onAnimationCancel will not be called and mIncomingCallWidgetIsFadingOut
+            // will be alway true. hideIncomingCallWidget() will not be excuted in this case.
+            mIncomingCallWidgetIsFadingOut = false;
         }
         mIncomingCallWidget.setAlpha(1.0f);
 
@@ -1233,7 +1241,7 @@ public class InCallTouchUi extends FrameLayout
         if (PhoneUtils.isLandscape(this.getContext())) {
             TextView callStateLabel = (TextView) mIncomingCallWidget
                     .getRootView().findViewById(R.id.callStateLabel);
-            if (callStateLabel != null) callStateLabel.setGravity(Gravity.LEFT);
+            if (callStateLabel != null) callStateLabel.setGravity(Gravity.START);
         }
 
         mIncomingCallWidget.setVisibility(View.VISIBLE);
